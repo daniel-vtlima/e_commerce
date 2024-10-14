@@ -1,33 +1,28 @@
 """
-
-This module implements a simple backend system for an e-commerce platform where users can
-register, log in, manage products, add products to their cart, and place orders. The system also
-includes basic user authentication and authorization, with secure password storage. The data
-is persisted using SQLite.
+This module implements a backend system for an e-commerce platform where users can register, log in,
+manage products, add products to their cart, and place orders. It includes user authentication with
+secure password storage, and data is persisted using SQLite.
 
 Classes:
-User: Represents a user of the platform, providing methods for registration and login.
-Product: Manages the product catalog, with methods for adding, editing, removing, and
-viewing products.
-Cart: Manages a user's shopping cart, with methods for adding products, viewing the cart,
-and placing orders.
+    User: Represents a user with methods for registration, login, and password management.
+    ProductManagement: Manages products, providing methods to add, edit, remove, and view products.
+    Cart: Manages a user's shopping cart with methods to add products, view the cart, and place orders.
 
 Functions:
-init_db: Initializes the SQLite database and creates necessary tables.
+    init_db: Initializes the SQLite database and creates necessary tables.
 
 Usage:
-- Users can register and log in to manage their account.
-- Admin users can add, edit, or remove products from the catalog.
-- Logged-in users can add products to their cart, view their cart, and place orders.
+    - Users can register and log in to manage their account.
+    - Admin users can add, edit, or remove products from the catalog.
+    - Logged-in users can add products to their cart, view their cart, and place orders.
 
 Error Handling:
-- Handles duplicate usernames during registration.
-- Handles empty cart scenarios when placing an order.
-- Prints error messages for invalid credentials during login.
+    - Handles duplicate usernames during registration.
+    - Handles empty cart scenarios when placing an order.
+    - Prints error messages for invalid credentials during login.
 
 Security:
-- Passwords are securely hashed before being stored in the database.
-
+    - Passwords are securely hashed before being stored in the database.
 """
 import sqlite3
 from utils import get_db_connection, hash_password, init_db
@@ -133,7 +128,7 @@ class User:
             print("Invalid credentials!")
             return None
 
-class ProductRepository:
+class ProductManagement:
     """
     Repository class for performing database operations related to products.
 
@@ -142,7 +137,7 @@ class ProductRepository:
     """
     def __init__(self, connection):
         """
-        Initializes the ProductRepository with a database connection.
+        Initializes the ProductManagement with a database connection.
 
         Args:
             connection: A database connection object.
@@ -303,23 +298,29 @@ init_db()
 # Example Usage
 if __name__ == "__main__":
     # User Registration
-    user = User("john_doe", "password123")
+    user = User("daniel lima", "password123")
     user.register()
 
     # User Login
-    logged_in_user = User.login("john_doe", "password123")
+    logged_in_user = User.login("daniel lima", "password123")
     if logged_in_user:
+        # Create a database connection
+        conn = get_db_connection()
+
+        # Create a ProductManagement instance
+        product_repo = ProductManagement(conn)
+
         # Add Product (Admin Only)
         if logged_in_user.is_admin:
-            ProductRepository.add_product("Laptop", "Gaming Laptop", 1500.0)
+            product_repo.add_product("Laptop", "Gaming Laptop", 1500.0)
 
         # View Products
-        products = ProductRepository.view_products()
+        products = product_repo.view_products()
         for product in products:
             print(product)
 
         # Add to Cart
-        cart = Cart(user_id=1)
+        cart = Cart(user_id=1, connection=conn)
         cart.add_to_cart(product_id=1, quantity=2)
 
         # View Cart
@@ -328,3 +329,4 @@ if __name__ == "__main__":
 
         # Place Order
         cart.place_order()
+        
