@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "ecommerce-backend"
+version = "0.1.0"
+description = "A simple backend for an e-commerce platform"
+authors = ["Your Name <your.email@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+sqlite3 = "^0.0.1"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
