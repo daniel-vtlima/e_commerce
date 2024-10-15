@@ -3,6 +3,7 @@ from uuid import uuid4
 from datetime import datetime
 from e_commerce.db import get_db_connection
 from e_commerce.utils import hash_password
+from loguru import logger
 
 class User:
     """
@@ -38,14 +39,15 @@ class User:
             c.execute("INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)",
                       (self.username, self.password, self.is_admin))
             conn.commit()
+            logger.success("User successfully registered!")
 
             return True
         except sqlite3.IntegrityError:
-            print("Username already exists!")
+            logger.warning("Username already exists!")
 
             return False
         except sqlite3.Error as e:
-            print(f"An error occurred while registering the user: {e}")
+            logger.error(f"An error occurred while registering the user: {e}")
 
             return False
         finally:
@@ -70,15 +72,15 @@ class User:
                 c = conn.cursor()
                 c.execute("UPDATE users SET password = ? WHERE username = ?", (self.password, self.username))
                 conn.commit()
-                print("Password changed successfully!")
+                logger.success("Password changed successfully!")
                 return True
             except sqlite3.Error as e:
-                print(f"An error occurred while changing the password: {e}")
+                logger.error(f"An error occurred while changing the password: {e}")
             finally:
                 if conn:
                     conn.close()
         else:
-            print("Old password is incorrect!")
+            logger.error("Old password is incorrect!")
             return False
 
     @staticmethod
@@ -99,8 +101,9 @@ class User:
             hashed_pw = hash_password(password)
             c.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, hashed_pw))
             user = c.fetchone()
+            logger.success("User logged successfully!")
         except sqlite3.Error as e:
-            print(f"An error occurred during login: {e}")
+            logger.error(f"An error occurred during login: {e}")
             return None
         finally:
             if conn:
@@ -109,5 +112,5 @@ class User:
         if user:
             return User(username, password, user[3])
         else:
-            print("Invalid credentials!")
+            logger.error("Invalid credentials!")
             return None

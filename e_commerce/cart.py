@@ -28,6 +28,7 @@ Classes:
         order is placed, and an entry is added to the 'orders' table in the database.
 """
 from e_commerce.db import get_db_connection
+from loguru import logger
 
 class Cart:
     """
@@ -103,8 +104,8 @@ class Cart:
                                (self.user_id, product_details))
                 cursor.execute("DELETE FROM carts WHERE user_id = ?", (self.user_id,))
         except ValueError as ve:
-            print(ve)
+            logger.error(ve)
         except Exception as e:
             raise RuntimeError(f"Failed to place order: {e}")
         else:
-            print("Order placed successfully!")
+            logger.success("Order placed successfully!")

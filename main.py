@@ -52,6 +52,7 @@ from e_commerce.db import init_db, get_db_connection
 from e_commerce.users import User
 from e_commerce.products import ProductManagement
 from e_commerce.cart import Cart
+from loguru import logger
 
 def main():
     # Initialize the database
@@ -61,40 +62,40 @@ def main():
     connection = get_db_connection()
 
     # User Registration
-    user = User("daniel lima", "password123", connection)
+    user = User("daniel lima", "password123", True)
     user.register()
 
     # User Login
     logged_in_user = User.login("daniel lima", "password123")
     if logged_in_user:
-        print(f"User {logged_in_user.username} logged in successfully.")
+        logger.success(f"User {logged_in_user.username} logged in successfully.")
 
         # Add Product (Admin Only)
         if logged_in_user.is_admin:
             product_repo = ProductManagement(connection)
             product_repo.add_product("Laptop", "Gaming Laptop", 1500.0)
-            print("Product added: Laptop")
+            logger.info("Product added: Laptop")
 
         # View Products
         product_repo = ProductManagement(connection)
         products = product_repo.view_products()
-        print("Available products:")
+        logger.info("Available products:")
         for product in products:
-            print(product)
+            logger.info(product)
 
         # Add to Cart
         cart = Cart(user_id=logged_in_user.id, connection=connection)
         cart.add_to_cart(product_id=1, quantity=2)
-        print("Added product to cart.")
+        logger.success("Added product to cart.")
 
         # View Cart
         cart_items = cart.view_cart()
-        print("Cart contents:")
-        print(cart_items)
+        logger.info("Cart contents:")
+        logger.info(cart_items)
 
         # Place Order
         cart.place_order()
-        print("Order placed successfully.")
+        logger.success("Order placed successfully.")
 
     # Close the connection
     connection.close()
