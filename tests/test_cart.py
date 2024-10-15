@@ -22,8 +22,10 @@ Test Functions:
 import pytest
 from unittest.mock import patch, MagicMock
 from e_commerce.cart import Cart
+from loguru import logger
+import sys
+import logging
 
-# Fixture to mock database connection
 @pytest.fixture
 def mock_db_connection():
     with patch('e_commerce.cart.get_db_connection') as mock_get_conn:
@@ -34,6 +36,18 @@ def mock_db_connection():
         mock_conn.__enter__.return_value = mock_conn
         mock_conn.__exit__.return_value = None
         yield mock_conn, mock_cursor
+
+# Fixture to configure loguru to propagate logs to the standard logging module
+@pytest.fixture(autouse=True)
+def configure_loguru(caplog):
+    logger.remove()
+
+    class PropagateHandler(logging.Handler):
+        def emit(self, record):
+            logging.getLogger(record.name).handle(record)
+
+    logger.add(PropagateHandler(), level="INFO")
+    caplog.set_level(logging.INFO)
 
 def test_add_to_cart(mock_db_connection):
     mock_conn, mock_cursor = mock_db_connection
@@ -70,7 +84,7 @@ def test_view_cart(mock_db_connection):
     ]
     assert cart_items == expected_items
 
-def test_place_order_success(mock_db_connection, capsys):
+def test_place_order_success(mock_db_connection, caplog):
     mock_conn, mock_cursor = mock_db_connection
     cart = Cart(user_id=1, connection=mock_conn)
 
@@ -80,9 +94,8 @@ def test_place_order_success(mock_db_connection, capsys):
     # Call place_order
     cart.place_order()
 
-    # Capture printed output
-    captured = capsys.readouterr()
-    assert "Order placed successfully!" in captured.out
+    # Check that the success message was logged
+    assert any("Order placed successfully!" in record.message for record in caplog.records)
 
     # Assert that SELECT was called to get cart items
     mock_cursor.execute.assert_any_call(
@@ -101,7 +114,7 @@ def test_place_order_success(mock_db_connection, capsys):
         "DELETE FROM carts WHERE user_id = ?", (1,)
     )
 
-def test_place_order_empty_cart(mock_db_connection, capsys):
+def test_place_order_empty_cart(mock_db_connection, caplog):
     mock_conn, mock_cursor = mock_db_connection
     cart = Cart(user_id=1, connection=mock_conn)
 
@@ -111,9 +124,8 @@ def test_place_order_empty_cart(mock_db_connection, capsys):
     # Call place_order
     cart.place_order()
 
-    # Capture printed output
-    captured = capsys.readouterr()
-    assert "Cart is empty! Cannot place an order." in captured.out
+    # Check that the error message was logged
+    assert any("Cart is empty! Cannot place an order." in record.message for record in caplog.records)
 
     # Assert that SELECT was called to get cart items
     mock_cursor.execute.assert_called_with(
@@ -121,4 +133,6 @@ def test_place_order_empty_cart(mock_db_connection, capsys):
     )
 
     # Assert that no further SQL queries were executed
+    # Since the cursor is a MagicMock, check the call count
+    # Only the SELECT should have been called
     assert mock_cursor.execute.call_count == 1
